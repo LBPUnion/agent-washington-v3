@@ -91,7 +91,7 @@ public class SettingsManager : BotModule
         }
     }
 
-    private void SaveSettings()
+    public void SaveSettings()
     {
         Logger.Log("Saving configuration...");
 

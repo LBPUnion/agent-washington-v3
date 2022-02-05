@@ -83,4 +83,10 @@ public class ModuleManager
         
         Logger.Log("Bootstrap completed.");
     }
+
+    internal void Tick(UpdateInterval interval)
+    {
+        foreach (var plugin in _modules)
+            plugin.Tick(interval);
+    }
 }

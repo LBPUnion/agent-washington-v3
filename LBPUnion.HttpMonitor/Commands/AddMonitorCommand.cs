@@ -2,6 +2,7 @@
 using System.Reflection.Metadata;
 using Discord;
 using LBPUnion.AgentWashington.Core;
+using LBPUnion.HttpMonitor.Settings;
 
 namespace LBPUnion.HttpMonitor.Commands;
 
@@ -30,6 +31,7 @@ public class AddMonitorCommand : Command
 
     protected override Task OnHandle()
     {
+        var monitor = Modules.GetModule<MonitorPlugin>();
         var name = GetArgument<string>("name");
         var host = GetArgument<string>("host");
 
@@ -48,6 +50,29 @@ public class AddMonitorCommand : Command
         if (!TryGetArgument<bool>("trust-all-certs", out var trustAll))
             trustAll = false;
 
+        if (monitor.TargetExists(name))
+        {
+            var error = new EmbedBuilder();
+            error.WithColor(Color.Red);
+            error.WithTitle("Cannot add server: " + name);
+            error.WithDescription("A server with this name already exists in the monitor list.");
+            
+            RespondWithEmbed(error.Build());
+
+            return Task.CompletedTask;
+        }
+        
+        var target = new MonitorTarget
+        {
+            Name = name,
+            Host = host,
+            Port = (ushort) port,
+            Path = path,
+            UseSsl = https,
+            IgnoreSslCertErrors = trustAll
+        };
+        monitor.AddTarget(target);
+        
         var builder = new EmbedBuilder();
         builder.WithColor(Color.Green);
         builder.WithTitle("Added new server: " + name);
@@ -59,7 +84,7 @@ public class AddMonitorCommand : Command
         builder.AddField("Trust All Certificates", trustAll);
 
         RespondWithEmbed(builder.Build());
-        
+
         return Task.CompletedTask;
     }
 }

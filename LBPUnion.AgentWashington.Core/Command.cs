@@ -14,6 +14,8 @@ public abstract class Command
     public virtual string Name => GetType().Name;
     public virtual string Description => "There is no description for this command.";
 
+    protected ModuleManager Modules => _modules;
+    
     public virtual IEnumerable<Option> Options
     {
         get

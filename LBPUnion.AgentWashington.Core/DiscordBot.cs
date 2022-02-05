@@ -1,4 +1,5 @@
-﻿using Discord;
+﻿using System.Diagnostics;
+using Discord;
 using Discord.WebSocket;
 using LBPUnion.AgentWashington.Core.Logging;
 using LBPUnion.AgentWashington.Core.Settings;
@@ -120,10 +121,22 @@ public class DiscordBot : BotModule
             await Task.Delay(10);
         
         await _commands.BuildSlashCommands(_client);
+
+        var runtime = TimeSpan.Zero;
+        var watch = new Stopwatch();
+
+        watch.Start();
         
         _running = true;
         while (_running)
         {
+            var elapsed = watch.Elapsed;
+            var delta = elapsed - runtime;
+
+            Modules.Tick(new UpdateInterval(elapsed, delta));
+            
+            runtime = elapsed;
+            
             await Task.Delay(10);
         }
     }

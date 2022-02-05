@@ -35,7 +35,13 @@ public abstract class BotModule
         Init();
         _hasInitialized = true;
     }
+
+    internal void Tick(UpdateInterval interval)
+    {
+        OnTick(interval);
+    }
     
+    protected virtual void OnTick(UpdateInterval interval) {}
     protected virtual void BeforeInit() {}
     protected virtual void Init() {}
 }

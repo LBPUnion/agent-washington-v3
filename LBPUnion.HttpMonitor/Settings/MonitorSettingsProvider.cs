@@ -8,6 +8,8 @@ public class MonitorSettingsProvider : ISettingsGroup
 {
     private List<MonitorTarget> _targets = new List<MonitorTarget>();
 
+    internal IEnumerable<MonitorTarget> Targets => _targets;
+
     public void InitializeDefaults()
     {
         _targets.Clear();
@@ -41,6 +43,11 @@ public class MonitorSettingsProvider : ISettingsGroup
                     }
                 }
             }
-        }       
+        }
+    }
+
+    internal void AddTarget(MonitorTarget target)
+    {
+        _targets.Add(target);
     }
 }
