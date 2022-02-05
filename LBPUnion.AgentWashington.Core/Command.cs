@@ -6,7 +6,7 @@ namespace LBPUnion.AgentWashington.Core;
 public abstract class Command
 {
     private string _textResponse;
-    private Embed _responseEmbed;
+    private Embed _responseEmbed = null;
     private ModuleManager _modules;
     private SocketSlashCommand _command;
     
@@ -33,6 +33,11 @@ public abstract class Command
         {
             response.Content = _textResponse;
             response.Embed = _responseEmbed;
+
+            if (string.IsNullOrWhiteSpace(this._textResponse) && this._responseEmbed == null)
+            {
+                response.Content = "The command was successful.";
+            }
         });
     }
 

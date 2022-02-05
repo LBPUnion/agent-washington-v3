@@ -1,8 +1,15 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LBPUnion.AgentWashington.Bot", "LBPUnion.AgentWashington.Bot\LBPUnion.AgentWashington.Bot.csproj", "{20957E32-CBC0-4648-AC48-B566AF25BEDE}"
+	ProjectSection(ProjectDependencies) = postProject
+		{8663CD8B-3289-467E-B31F-DF81775A6B91} = {8663CD8B-3289-467E-B31F-DF81775A6B91}
+	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LBPUnion.AgentWashington.Core", "LBPUnion.AgentWashington.Core\LBPUnion.AgentWashington.Core.csproj", "{CB7F04BA-5DF1-4B8F-846F-CDC0226045C6}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Plugins", "Plugins", "{EF4BD420-66C4-405E-944C-DB600DC05049}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LBPUnion.HttpMonitor", "LBPUnion.HttpMonitor\LBPUnion.HttpMonitor.csproj", "{8663CD8B-3289-467E-B31F-DF81775A6B91}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -18,5 +25,12 @@ Global
 		{CB7F04BA-5DF1-4B8F-846F-CDC0226045C6}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{CB7F04BA-5DF1-4B8F-846F-CDC0226045C6}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{CB7F04BA-5DF1-4B8F-846F-CDC0226045C6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8663CD8B-3289-467E-B31F-DF81775A6B91}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8663CD8B-3289-467E-B31F-DF81775A6B91}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8663CD8B-3289-467E-B31F-DF81775A6B91}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8663CD8B-3289-467E-B31F-DF81775A6B91}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{8663CD8B-3289-467E-B31F-DF81775A6B91} = {EF4BD420-66C4-405E-944C-DB600DC05049}
 	EndGlobalSection
 EndGlobal
