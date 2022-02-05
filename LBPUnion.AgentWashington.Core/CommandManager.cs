@@ -53,6 +53,11 @@ public class CommandManager : BotModule
             builder.WithName(command.Name);
             builder.WithDescription(command.Description);
 
+            foreach (var option in command.Options)
+            {
+                builder.AddOption(option.Name, MapOptionType(option.Type), option.Description, option.IsRequired);
+            }
+            
             var slashCommand = builder.Build();
 
             foreach (var guild in client.Guilds)
@@ -73,5 +78,22 @@ public class CommandManager : BotModule
             throw new InvalidOperationException($"Slash command {commandData.CommandName} not found.");
 
         await command.Handle(commandData);
+    }
+
+    internal static ApplicationCommandOptionType MapOptionType(OptionType type)
+    {
+        return type switch
+        {
+            OptionType.SubCommand => ApplicationCommandOptionType.SubCommand,
+            OptionType.SubCommandGroup => ApplicationCommandOptionType.SubCommandGroup,
+            OptionType.String => ApplicationCommandOptionType.String,
+            OptionType.Integer => ApplicationCommandOptionType.Integer,
+            OptionType.Boolean => ApplicationCommandOptionType.Boolean,
+            OptionType.User => ApplicationCommandOptionType.User,
+            OptionType.Channel => ApplicationCommandOptionType.Channel,
+            OptionType.Role => ApplicationCommandOptionType.Role,
+            OptionType.Mentionable => ApplicationCommandOptionType.Mentionable,
+            _ => throw new ArgumentOutOfRangeException(nameof(type), type, null)
+        };
     }
 }
