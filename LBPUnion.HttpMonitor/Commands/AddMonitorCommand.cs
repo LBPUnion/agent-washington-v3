@@ -38,7 +38,7 @@ public class AddMonitorCommand : Command
         if (!TryGetArgument<string>("path", out var path))
             path = "/";
 
-        if (!TryGetArgument<int>("port", out var port))
+        if (!TryGetArgument<long>("port", out var port))
             port = 80;
 
         if (!TryGetArgument<bool>("https", out var https))
