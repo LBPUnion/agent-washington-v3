@@ -50,4 +50,9 @@ public class MonitorSettingsProvider : ISettingsGroup
     {
         _targets.Add(target);
     }
+
+    internal void DeleteTarget(MonitorTarget target)
+    {
+        _targets.Remove(target);
+    }
 }

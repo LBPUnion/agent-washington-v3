@@ -35,6 +35,7 @@ public class MonitorPlugin : BotModule
         Logger.Log("Registering monitor commands...");
         
         _commands.RegisterCommand<AddMonitorCommand>();
+        _commands.RegisterCommand<RemoveMonitorCommand>();
     }
 
     internal void AddTarget(MonitorTarget target)
@@ -84,6 +85,16 @@ public class MonitorPlugin : BotModule
         {
             UpdateMonitors();
             _timeUntilNextUpdate = _updateInterval;
+        }
+    }
+
+    internal void DeleteTarget(string targetName)
+    {
+        var target = _monitorSettings.Targets.FirstOrDefault(x => x.Name == targetName);
+        if (target != null)
+        {
+            _monitorSettings.DeleteTarget(target);
+            _settings.SaveSettings();
         }
     }
 }
