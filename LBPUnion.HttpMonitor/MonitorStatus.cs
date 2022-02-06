@@ -14,6 +14,8 @@ public sealed class MonitorStatus
 
     public ServerStatus ServerStatus => _status;
     public int StatusCode => _statusCode;
+
+    public string Name => _target.Name;
     
     internal MonitorStatus(MonitorTarget target)
     {
@@ -79,10 +81,21 @@ public sealed class MonitorStatus
         catch (WebException ex)
         {
             var res = ex.Response as HttpWebResponse;
-            _status = ServerStatus.Offline;
-            _statusCode = (int) res.StatusCode;
+            if (res != null)
+            {
+                _status = ServerStatus.Offline;
+                _statusCode = (int) res.StatusCode;
 
-            Logger.Log($"[{_target.Name}] Server responded with an error. {ex.Message} (status code {_statusCode})");
+                Logger.Log(
+                    $"[{_target.Name}] Server responded with an error. {ex.Message} (status code {_statusCode})");
+            }
+            else
+            {
+                _statusCode = 0;
+                _status = ServerStatus.Unknown;
+
+                Logger.Log($"[{_target.Name}] Connection error: " + ex.Message, LogLevel.Error);
+            }
         }
 
 
@@ -105,4 +118,5 @@ public enum ServerStatus
     Online,
     Offline,
     DnsError,
+    Unknown
 }

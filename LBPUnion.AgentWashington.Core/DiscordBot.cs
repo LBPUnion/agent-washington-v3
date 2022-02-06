@@ -57,6 +57,11 @@ public class DiscordBot : BotModule
         return Task.CompletedTask;
     }
 
+    public IEnumerable<SocketGuild> GetGuilds()
+    {
+        return _client.Guilds;
+    }
+
     private Task HandleDiscordLoga(LogMessage arg)
     {
         var level = arg.Severity switch
