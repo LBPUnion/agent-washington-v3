@@ -8,6 +8,7 @@ namespace LBPUnion.HttpMonitor;
 
 public sealed class MonitorStatus
 {
+    private bool _hasChanged = false;
     private int _statusCode;
     private ServerStatus _status;
     private MonitorTarget _target;
@@ -21,6 +22,8 @@ public sealed class MonitorStatus
     {
         _target = target;
     }
+
+    public bool HasStatusChanged => _hasChanged;
 
     public string Url
     {
@@ -39,10 +42,13 @@ public sealed class MonitorStatus
         }
     }
     
-    internal void CheckStatus()
+    internal void CheckStatus(MonitorSettingsProvider settings)
     {
 #pragma warning disable CS0618
         var url = Url;
+
+        var oldStatus = _status;
+        var oldCode = _statusCode;
         
         if (!Uri.TryCreate(url, UriKind.Absolute, out var parsedUrl))
         {
@@ -59,6 +65,7 @@ public sealed class MonitorStatus
         {
             Logger.Log($"[{_target.Name}]: DNS lookup error - {ex.Message}", LogLevel.Error);
             _status = ServerStatus.DnsError;
+            UpdateStatusHistory(settings, oldStatus, oldCode);
             return;
         }
         
@@ -104,9 +111,17 @@ public sealed class MonitorStatus
         {
             ServicePointManager.ServerCertificateValidationCallback -= IgnoreCertChecks;
         }
+        
+        UpdateStatusHistory(settings, oldStatus, oldCode);
+        
 #pragma warning restore CS0618
     }
-    
+
+    private void UpdateStatusHistory(MonitorSettingsProvider settings, ServerStatus oldStatus, int oldCode)
+    {
+        _hasChanged = (oldStatus != _status || oldCode != _statusCode);
+    }
+
     private bool IgnoreCertChecks(object sender, X509Certificate? certificate, X509Chain? chain, SslPolicyErrors sslpolicyerrors)
     {
         return true;

@@ -9,7 +9,13 @@ public class MonitorSettingsProvider : ISettingsGroup
     private List<MonitorTarget> _targets = new List<MonitorTarget>();
     private Dictionary<ulong, ulong> _liveStatusChannels = new Dictionary<ulong, ulong>();
     private Dictionary<ulong, ulong> _liveStatusMessages = new();
+    private Dictionary<ulong, ulong> _historyChannels = new Dictionary<ulong, ulong>();
 
+    public bool TryGetStatusHistoryChannel(ulong guild, out ulong channel)
+    {
+        return _historyChannels.TryGetValue(guild, out channel);
+    }
+    
     internal void SetLiveStatusChannelMessage(ulong channel, ulong message)
     {
         if (_liveStatusMessages.ContainsKey(channel))
@@ -71,6 +77,15 @@ public class MonitorSettingsProvider : ISettingsGroup
         }
         
         settingsData.Add("liveChannelMessages", liveChannelMessages);
+        
+        var historyChannels = new JsonObject();
+
+        foreach (var guild in _historyChannels)
+        {
+            historyChannels.Add(guild.Key.ToString(), guild.Value.ToString());
+        }
+        
+        settingsData.Add("historyChannels", historyChannels);
     }
 
     public void Deserialize(JsonObject settingsData)
@@ -123,6 +138,24 @@ public class MonitorSettingsProvider : ISettingsGroup
                             _liveStatusMessages[guild] = channel;
                         else
                             _liveStatusMessages.Add(guild, channel);
+                    }
+                }
+            }
+        }
+        
+        if (settingsData.TryGetPropertyValue("historyChannels", out node))
+        {
+            if (node is JsonObject liveChannels)
+            {
+                foreach (var key in liveChannels)
+                {
+                    if (ulong.TryParse(key.Key, out var guild)
+                        && ulong.TryParse(key.Value?.GetValue<string>(), out var channel))
+                    {
+                        if (_historyChannels.ContainsKey(guild))
+                            _historyChannels[guild] = channel;
+                        else
+                            _historyChannels.Add(guild, channel);
                     }
                 }
             }

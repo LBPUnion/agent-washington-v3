@@ -3,6 +3,8 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LBPUnion.AgentWashington.Bot", "LBPUnion.AgentWashington.Bot\LBPUnion.AgentWashington.Bot.csproj", "{20957E32-CBC0-4648-AC48-B566AF25BEDE}"
 	ProjectSection(ProjectDependencies) = postProject
 		{8663CD8B-3289-467E-B31F-DF81775A6B91} = {8663CD8B-3289-467E-B31F-DF81775A6B91}
+		{A0E22B2E-8C51-48BC-86E3-2410FF0C2D15} = {A0E22B2E-8C51-48BC-86E3-2410FF0C2D15}
+		{2170CF7D-9956-429D-A802-806471B76CFD} = {2170CF7D-9956-429D-A802-806471B76CFD}
 	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LBPUnion.AgentWashington.Core", "LBPUnion.AgentWashington.Core\LBPUnion.AgentWashington.Core.csproj", "{CB7F04BA-5DF1-4B8F-846F-CDC0226045C6}"

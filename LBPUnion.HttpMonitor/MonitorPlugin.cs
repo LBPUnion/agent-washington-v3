@@ -1,4 +1,7 @@
 ﻿using System.Diagnostics;
+using Discord;
+using Discord.Rest;
+using Discord.WebSocket;
 using LBPUnion.AgentWashington.Core;
 using LBPUnion.AgentWashington.Core.Logging;
 using LBPUnion.AgentWashington.Core.Plugins;
@@ -80,12 +83,60 @@ public class MonitorPlugin : BotModule
         foreach (var status in _statuses)
         {
             Logger.Log($"Updating server: {status.Key}");
-            status.Value.CheckStatus();
+            status.Value.CheckStatus(_monitorSettings);
+
+            if (status.Value.HasStatusChanged)
+            {
+                var bot = Modules.GetModule<DiscordBot>();
+
+                foreach (var guild in bot.GetGuilds())
+                {
+                    UpdateStatusHistoryAsync(bot, guild, status.Value).Wait();
+                }
+            }
         }
 
         Logger.Log("Status check completed.");
 
         _liveStatus.UpdateStatus(_statuses.Values);
+    }
+
+    private async Task UpdateStatusHistoryAsync(DiscordBot bot, SocketGuild guild, MonitorStatus status)
+    {
+        if (_monitorSettings.TryGetStatusHistoryChannel(guild.Id, out var channelId))
+        {
+            if (guild.GetChannel(channelId) is SocketTextChannel channel)
+            {
+                var builder = new EmbedBuilder();
+                builder.WithTitle($"{status.Name}: Server status changed!");
+                builder.WithDescription($"`{status.Url}`");
+
+                switch (status.ServerStatus)
+                {
+                    case ServerStatus.Offline:
+                        builder.WithColor(Color.Red);
+                        builder.AddField("Status", "Offline");
+                        builder.AddField("Status Code", status.StatusCode);
+                        break;
+                    case ServerStatus.DnsError:
+                        builder.WithColor(Color.Orange);
+                        builder.AddField("Status", "Server Unreachable");
+                        builder.AddField("Reason", "Agent Washington failed to resolve the hostname.");
+                        break;
+                    case ServerStatus.Unknown:
+                        builder.WithColor(Color.Green);
+                        builder.AddField("Status", "Online");
+                        builder.AddField("Status Code", status.StatusCode);
+                        break;
+                    default:
+                        builder.WithColor(Color.Orange);
+                        builder.AddField("Status", "Unknown");
+                        break;
+                }
+
+                await channel.SendMessageAsync(string.Empty, false, builder.Build());
+            }
+        }
     }
     
     protected override void OnTick(UpdateInterval interval)
