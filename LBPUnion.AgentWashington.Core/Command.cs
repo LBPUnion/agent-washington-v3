@@ -1,20 +1,29 @@
 ﻿using Discord;
 using Discord.WebSocket;
+using LBPUnion.AgentWashington.Core.Permissions;
 
 namespace LBPUnion.AgentWashington.Core;
 
 public abstract class Command
 {
+    private bool _isEphemeral = false;
     private Dictionary<string, object> _args = new();
     private string _textResponse;
     private Embed _responseEmbed = null;
     private ModuleManager _modules;
     private SocketSlashCommand _command;
+    private SocketGuild _guild;
     
     public virtual string Name => GetType().Name;
     public virtual string Description => "There is no description for this command.";
 
+    protected SocketUser User => _command.User;
+    protected bool WasRunInGuild => _guild != null;
+    protected SocketGuild Guild => _guild;
+
     protected ModuleManager Modules => _modules;
+
+    protected virtual PermissionLevel MinimumPermissionLevel => PermissionLevel.Default;
     
     public virtual IEnumerable<Option> Options
     {
@@ -78,26 +87,71 @@ public abstract class Command
 
         return true;
     }
+
+    protected void MakeEphemeral()
+    {
+        _isEphemeral = true;
+    }
+
+    private bool TestPermissions()
+    {
+        var required = (int) MinimumPermissionLevel;
+
+        var permManager = Modules.GetModule<PermissionManager>();
+        var userPerm = (int) permManager.GetPermissionLevel(User);
+
+        var granted = userPerm >= required;
+
+        if (!granted)
+        {
+            MakeEphemeral();
+            var error = new EmbedBuilder();
+            error.WithTitle("Access denied");
+            error.WithDescription("You do not have permission to run this command.");
+            error.WithColor(Color.Red);
+            RespondWithEmbed(error.Build());
+        }
+        
+        return granted;
+    }
     
     internal async Task Handle(SocketSlashCommand command)
     {
+        _isEphemeral = false;
         _command = command;
 
-        var result = ReadOptions(command);
+        if (_command.Channel is SocketTextChannel textChannel)
+        {
+            this._guild = textChannel.Guild;
+        }
         
-        if (result)
+        var result = ReadOptions(command);
+
+        result &= TestPermissions();
+
+            if (result)
             await OnHandle();
 
-        await command.ModifyOriginalResponseAsync((response) =>
+        var embeds = new List<Embed>();
+        var ephemeral = this._isEphemeral;
+        if (_responseEmbed == null && string.IsNullOrWhiteSpace(_textResponse))
         {
-            response.Content = _textResponse;
-            response.Embed = _responseEmbed;
+            var successEmbed = new EmbedBuilder();
+            successEmbed.WithTitle("Request fulfilled.");
+            successEmbed.WithDescription("Your command has been fulfilled successfully.");
+            successEmbed.WithColor(Color.Green);
 
-            if (string.IsNullOrWhiteSpace(this._textResponse) && this._responseEmbed == null)
-            {
-                response.Content = "The command was successful.";
-            }
-        });
+            embeds.Add(successEmbed.Build());
+
+            ephemeral = true;
+        }
+        else
+        {
+            if (_responseEmbed != null)
+                embeds.Add(_responseEmbed);
+        }
+
+        await command.FollowupAsync(_textResponse, embeds.Any() ? embeds.ToArray() : null, false, ephemeral);
     }
 
     protected T GetArgument<T>(string argument)

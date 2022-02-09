@@ -1,5 +1,6 @@
 ﻿using Discord;
 using LBPUnion.AgentWashington.Core;
+using LBPUnion.AgentWashington.Core.Permissions;
 
 namespace LBPUnion.HttpMonitor.Commands;
 
@@ -8,6 +9,8 @@ public class RemoveMonitorCommand : Command
     public override string Name => "remove-server";
     public override string Description => "Remove a server from the server monitor list.";
 
+    protected override PermissionLevel MinimumPermissionLevel => PermissionLevel.Administrator;
+    
     public override IEnumerable<Option> Options
     {
         get

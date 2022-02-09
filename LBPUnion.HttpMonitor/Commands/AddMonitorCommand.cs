@@ -2,6 +2,7 @@
 using System.Reflection.Metadata;
 using Discord;
 using LBPUnion.AgentWashington.Core;
+using LBPUnion.AgentWashington.Core.Permissions;
 using LBPUnion.HttpMonitor.Settings;
 
 namespace LBPUnion.HttpMonitor.Commands;
@@ -10,6 +11,8 @@ public class AddMonitorCommand : Command
 {
     public override string Name => "add-server";
     public override string Description => "Add a new server to the Server Monitor list.";
+
+    protected override PermissionLevel MinimumPermissionLevel => PermissionLevel.Administrator;
 
     public override IEnumerable<Option> Options
     {
