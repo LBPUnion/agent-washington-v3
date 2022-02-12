@@ -6,9 +6,16 @@ namespace LBPUnion.AgentWashington.Core.Settings;
 
 public class SettingsManager : BotModule
 {
+    private CommandManager _commands;
     private List<ISettingsGroup> _groups = new List<ISettingsGroup>();
     private string _settingsPath;
+    private Dictionary<string, IConfigurable> _configurables = new();
 
+    public bool TryGetConfigurable(string id, out IConfigurable configurable)
+    {
+        return _configurables.TryGetValue(id, out configurable);
+    }
+    
     public T RegisterSettings<T>() where T : ISettingsGroup, new()
     {
         var group = new T();
@@ -23,12 +30,14 @@ public class SettingsManager : BotModule
     protected override void BeforeInit()
     {
         _settingsPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "config.json");
+        _commands = Modules.GetModule<CommandManager>();
         Logger.Log($"Settings path is {_settingsPath}");
     }
 
     protected override void Init()
     {
         ReloadSettings();
+        _commands.RegisterCommand<ConfigCommand>();
     }
 
     private void ReloadSettings()
@@ -124,4 +133,13 @@ public class SettingsManager : BotModule
         }
     }
 
+    public void RegisterConfigurable(string id, IConfigurable configurable)
+    {
+        _configurables.Add(id, configurable);
+    }
+
+    public void RegisterConfigurable(string id, Func<string> getter, Action<string> setter)
+    {
+        RegisterConfigurable(id, new ConfigurableAction(getter, setter));
+    }
 }
