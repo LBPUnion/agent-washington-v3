@@ -44,6 +44,11 @@ public class MonitorSettingsProvider : ISettingsGroup
     
     internal IEnumerable<MonitorTarget> Targets => _targets;
 
+    public void OnRegister(SettingsManager manager)
+    {
+        
+    }
+
     public void InitializeDefaults()
     {
         _liveStatusChannels = new();

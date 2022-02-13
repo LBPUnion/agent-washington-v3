@@ -7,6 +7,11 @@ public class ConnectionSettings : ISettingsGroup
     private string _token;
 
     internal string Token => _token;
+    public void OnRegister(SettingsManager manager)
+    {
+        
+    }
+
     public void InitializeDefaults()
     {
         _token = string.Empty;

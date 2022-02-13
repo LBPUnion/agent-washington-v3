@@ -18,10 +18,15 @@ public class SettingsManager : BotModule
     
     public T RegisterSettings<T>() where T : ISettingsGroup, new()
     {
+        var ofType = _groups.OfType<T>().FirstOrDefault();
+        if (ofType != null)
+            return ofType;
+        
         var group = new T();
         Logger.Log($"Registering settings group: {group.GetType().Name}");
         _groups.Add(group);
 
+        group.OnRegister(this);
         ReloadSettings();
         
         return group;

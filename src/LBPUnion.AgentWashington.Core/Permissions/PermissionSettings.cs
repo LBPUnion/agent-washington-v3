@@ -9,7 +9,12 @@ public class PermissionSettings : ISettingsGroup
     private PermissionSettingsData _data = new PermissionSettingsData();
 
     public ulong DeveloperId => _data.DeveloperUserId;
-    
+
+    public void OnRegister(SettingsManager manager)
+    {
+        
+    }
+
     public void InitializeDefaults()
     {
         _data = new PermissionSettingsData();
