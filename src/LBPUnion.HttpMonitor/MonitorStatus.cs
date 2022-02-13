@@ -2,6 +2,7 @@
 using System.Net.Security;
 using System.Security.Cryptography.X509Certificates;
 using LBPUnion.AgentWashington.Core.Logging;
+using LBPUnion.AgentWashington.Core.Persistence;
 using LBPUnion.HttpMonitor.Settings;
 
 namespace LBPUnion.HttpMonitor;
@@ -12,14 +13,16 @@ public sealed class MonitorStatus
     private int _statusCode;
     private ServerStatus _status;
     private MonitorTarget _target;
+    private DatabaseManager _database;
 
     public ServerStatus ServerStatus => _status;
     public int StatusCode => _statusCode;
 
     public string Name => _target.Name;
     
-    internal MonitorStatus(MonitorTarget target)
+    internal MonitorStatus(DatabaseManager database, MonitorTarget target)
     {
+        _database = database;
         _target = target;
     }
 
@@ -41,12 +44,56 @@ public sealed class MonitorStatus
             return proto;
         }
     }
+
+    private void RestoreFromDatabase()
+    {
+        _database.OpenDatabase(db =>
+        {
+            var data = db.GetCollection<ServerStatusHistoryData>("statusHistoryData");
+
+            var status = data.FindOne(x => x.Url == Url);
+            if (status != null)
+            {
+                _status = status.Status;
+                _statusCode = status.StatusCode;
+            }
+        });
+    }
+
+    private void UpdateDatabase()
+    {
+        _database.OpenDatabase(db =>
+        {
+            var data = db.GetCollection<ServerStatusHistoryData>("statusHistoryData");
+
+            var status = data.FindOne(x => x.Url == Url);
+            if (status != null)
+            {
+                status.Status = _status;
+                status.StatusCode = _statusCode;
+                data.Update(status);
+            }
+            else
+            {
+                status = new ServerStatusHistoryData()
+                {
+                    Url = this.Url,
+                    Status = this._status,
+                    StatusCode = _statusCode
+                };
+
+                data.Insert(status);
+            }
+        });
+    }
     
     internal void CheckStatus(MonitorSettingsProvider settings)
     {
 #pragma warning disable CS0618
         var url = Url;
 
+        RestoreFromDatabase();
+        
         var oldStatus = _status;
         var oldCode = _statusCode;
         
@@ -115,6 +162,8 @@ public sealed class MonitorStatus
         UpdateStatusHistory(settings, oldStatus, oldCode);
         
 #pragma warning restore CS0618
+
+        UpdateDatabase();
     }
 
     private void UpdateStatusHistory(MonitorSettingsProvider settings, ServerStatus oldStatus, int oldCode)
@@ -125,6 +174,14 @@ public sealed class MonitorStatus
     private bool IgnoreCertChecks(object sender, X509Certificate? certificate, X509Chain? chain, SslPolicyErrors sslpolicyerrors)
     {
         return true;
+    }
+
+    private class ServerStatusHistoryData : IDatabaseObject
+    {
+        public Guid Id { get; set; }
+        public string Url { get; set; }
+        public int StatusCode { get; set; }
+        public ServerStatus Status { get; set; }
     }
 }
 

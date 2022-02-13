@@ -4,6 +4,7 @@ using Discord.Rest;
 using Discord.WebSocket;
 using LBPUnion.AgentWashington.Core;
 using LBPUnion.AgentWashington.Core.Logging;
+using LBPUnion.AgentWashington.Core.Persistence;
 using LBPUnion.AgentWashington.Core.Plugins;
 using LBPUnion.AgentWashington.Core.Settings;
 using LBPUnion.HttpMonitor.Commands;
@@ -18,6 +19,7 @@ public class MonitorPlugin : BotModule
     // TODO: make this configurable
     private const double _updateInterval = 30;
     private double _timeUntilNextUpdate = 0;
+    private DatabaseManager _database;
     private SettingsManager _settings;
     private CommandManager _commands;
     private MonitorSettingsProvider _monitorSettings;
@@ -38,7 +40,8 @@ public class MonitorPlugin : BotModule
         _monitorSettings = _settings.RegisterSettings<MonitorSettingsProvider>();
         
         Logger.Log("Registering monitor commands...");
-        
+
+        _database = Modules.GetModule<DatabaseManager>();
         _commands.RegisterCommand<AddMonitorCommand>();
         _commands.RegisterCommand<RemoveMonitorCommand>();
         
@@ -86,11 +89,12 @@ public class MonitorPlugin : BotModule
                 if (!_statuses.ContainsKey(targetKey))
                 {
                     Logger.Log($"New server {targetKey} will start being monitored now!");
-                    _statuses.Add(targetKey, new MonitorStatus(target));
+                    _statuses.Add(targetKey, new MonitorStatus(_database, target));
                 }
 
                 Logger.Log($"Updating server: {targetKey}");
                 var status = _statuses[targetKey];
+                
                 status.CheckStatus(_monitorSettings);
 
                 if (status.HasStatusChanged)
