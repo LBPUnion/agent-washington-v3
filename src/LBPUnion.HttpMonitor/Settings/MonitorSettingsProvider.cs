@@ -22,6 +22,25 @@ public class MonitorSettingsProvider : ISettingsGroup
         return true;
     }
 
+    public bool ShouldHideURLs(ulong guild)
+    {
+        var guildData = _data.Guilds.FirstOrDefault(x => x.Guild == guild);
+        if (guildData == null) return false;
+        return guildData.ShouldHideUrls;
+    }
+
+    public void SetShouldHideUrls(ulong guild, bool value)
+    {
+        var guildData = _data.Guilds.FirstOrDefault(x => x.Guild == guild);
+        if (guildData == null)
+        {
+            guildData = new MonitorGuild() {Guild = guild};
+            _data.Guilds.Add(guildData);
+        }
+
+        guildData.ShouldHideUrls = value;
+    }
+
     internal IEnumerable<MonitorGuild> Guilds => _data.Guilds;
 
     public bool TargetExistsInGuild(ulong guildId, string name)
@@ -164,6 +183,7 @@ public class MonitorSettingsProvider : ISettingsGroup
 
     internal class MonitorGuild
     {
+        public bool ShouldHideUrls { get; set; }
         public ulong Guild { get; set; }
         public List<MonitorTarget> Servers { get;set; } = new();
         public ulong LiveStatusChannel { get; set; }

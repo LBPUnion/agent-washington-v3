@@ -50,7 +50,7 @@ public class MonitorPlugin : BotModule
 
         _settings.RegisterConfigurable("monitor.liveStatusChannel", new LiveStatusConfigurable());
         _settings.RegisterConfigurable("monitor.statusHistoryChannel", new StatusHistoryConfigurable());
-        
+        _settings.RegisterConfigurable("monitor.hideURLs", new HideURLsConfigurable());
     }
 
     internal void AddTarget(SocketGuild guild, MonitorTarget target)
@@ -126,7 +126,7 @@ public class MonitorPlugin : BotModule
             {
                 var builder = new EmbedBuilder();
                 builder.WithTitle($"{status.Name}: Server status changed!");
-                builder.WithDescription($"`{status.Url}`");
+                builder.WithDescription(guild.ShouldHideUrls ? $"`<url hidden by administrator>`" : $"`{status.Url}`");
 
                 switch (status.ServerStatus)
                 {
