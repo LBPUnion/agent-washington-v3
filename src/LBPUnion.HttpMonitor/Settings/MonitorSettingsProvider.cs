@@ -19,6 +19,8 @@ public class MonitorSettingsProvider : ISettingsGroup
         return true;
     }
 
+    internal IEnumerable<MonitorGuild> Guilds => _data.Guilds;
+
     public bool TargetExistsInGuild(ulong guildId, string name)
     {
         var guildData = _data.Guilds.FirstOrDefault(x => x.Guild == guildId);
@@ -44,7 +46,19 @@ public class MonitorSettingsProvider : ISettingsGroup
 
         guildData.LiveStatusChannel = channel;
     }
-    
+
+    internal void SetStatusHistoryChannel(ulong guild, ulong channel)
+    {
+        var guildData = _data.Guilds.FirstOrDefault(x => x.Guild == guild);
+        if (guildData == null)
+        {
+            guildData = new MonitorGuild() {Guild = guild};
+            _data.Guilds.Add(guildData);
+        }
+
+        guildData.HistoryChannel = channel;
+    }
+
     public bool TryGetLiveStatusMessage(ulong channel, out ulong message)
     {
         // TODO
@@ -119,7 +133,7 @@ public class MonitorSettingsProvider : ISettingsGroup
         public List<MonitorGuild> Guilds { get; set; } = new();
     }
 
-    private class MonitorGuild
+    internal class MonitorGuild
     {
         public ulong Guild { get; set; }
         public List<MonitorTarget> Servers = new();

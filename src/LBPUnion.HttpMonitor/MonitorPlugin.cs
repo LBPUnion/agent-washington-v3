@@ -41,6 +41,12 @@ public class MonitorPlugin : BotModule
         
         _commands.RegisterCommand<AddMonitorCommand>();
         _commands.RegisterCommand<RemoveMonitorCommand>();
+        
+        Logger.Log("Registering configurables for Monitor Plugin...");
+
+        _settings.RegisterConfigurable("monitor.liveStatusChannel", new LiveStatusConfigurable());
+        _settings.RegisterConfigurable("monitor.statusHistoryChannel", new StatusHistoryConfigurable());
+        
     }
 
     internal void AddTarget(SocketGuild guild, MonitorTarget target)
@@ -60,52 +66,53 @@ public class MonitorPlugin : BotModule
         {
             var bot = Modules.GetModule<DiscordBot>();
             _liveStatus = new LiveStatusScreen(bot, _monitorSettings);
-        } 
-        
-        Logger.Log("Performing server status monitor operation...");
-        var badKeys = _statuses.Keys.Where(x => _monitorSettings.Targets.All(y => y.Name != x)).ToArray();
-
-        foreach (var key in badKeys)
-        {
-            Logger.Log($"Server {key} was removed from the monitor list, it will no longer be monitored.");
-            _statuses.Remove(key);
         }
 
-        foreach (var target in _monitorSettings.Targets)
+        foreach (var guild in _monitorSettings.Guilds)
         {
-            if (!_statuses.ContainsKey(target.Name))
+            Logger.Log($"Performing server status monitor operation for guild {guild.Guild}...");
+            var targetKeys = guild.Servers.Select(x => $"{guild.Guild.ToString()}:{x.Name}").ToArray();
+            var badKeys = _statuses.Keys.Where(x => !targetKeys.Contains(x)).ToArray();
+
+            foreach (var key in badKeys)
             {
-                Logger.Log($"New server {target.Name} will start being monitored now!");
-                _statuses.Add(target.Name, new MonitorStatus(target));
+                Logger.Log($"Server {key} was removed from the monitor list, it will no longer be monitored.");
+                _statuses.Remove(key);
             }
-        }
 
-        foreach (var status in _statuses)
-        {
-            Logger.Log($"Updating server: {status.Key}");
-            status.Value.CheckStatus(_monitorSettings);
-
-            if (status.Value.HasStatusChanged)
+            foreach (var target in guild.Servers)
             {
-                var bot = Modules.GetModule<DiscordBot>();
-
-                foreach (var guild in bot.GetGuilds())
+                var targetKey = $"{guild.Guild}:{target.Name}";
+                if (!_statuses.ContainsKey(targetKey))
                 {
-                    UpdateStatusHistoryAsync(bot, guild, status.Value).Wait();
+                    Logger.Log($"New server {targetKey} will start being monitored now!");
+                    _statuses.Add(targetKey, new MonitorStatus(target));
                 }
+
+                Logger.Log($"Updating server: {targetKey}");
+                var status = _statuses[targetKey];
+                status.CheckStatus(_monitorSettings);
+
+                if (status.HasStatusChanged)
+                {
+                    var bot = Modules.GetModule<DiscordBot>();
+                    UpdateStatusHistoryAsync(bot, guild, status).Wait();
+                }
+
+                var liveServers = _statuses.Where(x => targetKeys.Contains(x.Key)).Select(x => x.Value);
+                _liveStatus.UpdateStatus(guild, liveServers).Wait();
             }
+            
+            Logger.Log("Status check completed.");
         }
-
-        Logger.Log("Status check completed.");
-
-        _liveStatus.UpdateStatus(_statuses.Values);
     }
 
-    private async Task UpdateStatusHistoryAsync(DiscordBot bot, SocketGuild guild, MonitorStatus status)
+    private async Task UpdateStatusHistoryAsync(DiscordBot bot, MonitorSettingsProvider.MonitorGuild guild, MonitorStatus status)
     {
-        if (_monitorSettings.TryGetStatusHistoryChannel(guild.Id, out var channelId))
+        var actualGuild = bot.GetGuilds().FirstOrDefault(x => x.Id == guild.Guild);
+        if (actualGuild != null)
         {
-            if (guild.GetChannel(channelId) is SocketTextChannel channel)
+            if (actualGuild.GetChannel(guild.HistoryChannel) is SocketTextChannel channel)
             {
                 var builder = new EmbedBuilder();
                 builder.WithTitle($"{status.Name}: Server status changed!");

@@ -143,7 +143,7 @@ public class SettingsManager : BotModule
         _configurables.Add(id, configurable);
     }
 
-    public void RegisterConfigurable(string id, Func<string> getter, Action<string> setter)
+    public void RegisterConfigurable(string id, Func<ConfigurableContext, string> getter, Action<ConfigurableContext, string> setter)
     {
         RegisterConfigurable(id, new ConfigurableAction(getter, setter));
     }

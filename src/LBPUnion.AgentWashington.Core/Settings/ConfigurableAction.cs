@@ -2,15 +2,15 @@
 
 public class ConfigurableAction : IConfigurable
 {
-    private Func<string> _getter;
-    private Action<string> _setter;
+    private Func<ConfigurableContext, string> _getter;
+    private Action<ConfigurableContext, string> _setter;
 
-    public ConfigurableAction(Func<string> getter, Action<string> setter)
+    public ConfigurableAction(Func<ConfigurableContext, string> getter, Action<ConfigurableContext, string> setter)
     {
         _getter = getter;
         _setter = setter;
     }
 
-    public string GetValue() => _getter();
-    public void SetValue(string v) => _setter(v);
+    public string GetValue(ConfigurableContext ctx) => _getter(ctx);
+    public void SetValue(ConfigurableContext ctx, string v) => _setter(ctx, v);
 }

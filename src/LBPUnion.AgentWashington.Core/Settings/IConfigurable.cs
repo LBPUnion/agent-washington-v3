@@ -2,6 +2,6 @@
 
 public interface IConfigurable
 {
-    string GetValue();
-    void SetValue(string value);
+    string GetValue(ConfigurableContext ctx);
+    void SetValue(ConfigurableContext ctx, string value);
 }

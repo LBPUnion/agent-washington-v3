@@ -46,7 +46,8 @@ public class ConfigCommand : Command
         }
 
         var settings = this.Modules.GetModule<SettingsManager>();
-
+        var ctx = new ConfigurableContext(settings, Guild, User);
+        
         if (!settings.TryGetConfigurable(setting, out var configurable))
         {
             var error = new EmbedBuilder();
@@ -59,7 +60,7 @@ public class ConfigCommand : Command
 
         try
         {
-            configurable.SetValue(value);
+            configurable.SetValue(ctx, value);
         }
         catch (Exception ex)
         {

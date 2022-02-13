@@ -18,15 +18,22 @@ public class LiveStatusScreen
         _settings = settings;
     }
 
-    public async Task UpdateStatus(IEnumerable<MonitorStatus> monitors)
+    internal async Task UpdateStatus(MonitorSettingsProvider.MonitorGuild guild, IEnumerable<MonitorStatus> servers)
     {
+        if (guild.LiveStatusChannel == 0)
+            return;
+
+        var actualGuild = _bot.GetGuilds().FirstOrDefault(x => x.Id == guild.Guild);
+        if (actualGuild == null)
+            return;
+        
         var embed = new EmbedBuilder();
         embed.WithColor(Color.Blue);
         embed.WithTitle("Server Status");
         embed.WithDescription("Current status of all monitored servers.");
         embed.WithFooter($"Last checked: {DateTime.UtcNow} (UTC)");
-        
-        foreach (var monitor in monitors)
+
+        foreach (var monitor in servers)
         {
             var emoji = monitor.ServerStatus switch
             {
@@ -46,34 +53,30 @@ public class LiveStatusScreen
 
             embed.AddField(monitor.Name, $"{emoji} {fieldText}");
         }
-        
-        foreach (var guild in _bot.GetGuilds())
+
+
+        try
         {
-            if (_settings.TryGetGuildLiveStatusChannelId(guild.Id, out var channelId))
+            var channelId = guild.LiveStatusChannel;
+            var channel = actualGuild.GetTextChannel(channelId);
+
+            if (_settings.TryGetLiveStatusMessage(channelId, out var messageId))
             {
-                try
+                var message = await channel.GetMessageAsync(messageId);
+                var m88youngling = message as RestUserMessage;
+                if (m88youngling != null)
                 {
-                    var channel = guild.GetTextChannel(channelId);
-
-                    if (_settings.TryGetLiveStatusMessage(channelId, out var messageId))
-                    {
-                        var message = await channel.GetMessageAsync(messageId);
-                        var m88youngling = message as RestUserMessage;
-                        if (m88youngling != null)
-                        {
-                            await m88youngling.ModifyAsync((edit) => { edit.Embed = embed.Build(); });
-                            continue;
-                        }
-                    }
-
-                    var newMessage = await channel.SendMessageAsync(string.Empty, false, embed.Build());
-                    _settings.SetLiveStatusChannelMessage(channelId, newMessage.Id);
+                    await m88youngling.ModifyAsync((edit) => { edit.Embed = embed.Build(); });
+                    return;
                 }
-                catch (Exception ex)
-                {
-                    Logger.Log(ex.Message, LogLevel.Error);
-                }
-            }   
+            }
+
+            var newMessage = await channel.SendMessageAsync(string.Empty, false, embed.Build());
+            _settings.SetLiveStatusChannelMessage(channelId, newMessage.Id);
+        }
+        catch (Exception ex)
+        {
+            Logger.Log(ex.Message, LogLevel.Error);
         }
     }
 }
