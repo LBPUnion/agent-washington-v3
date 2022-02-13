@@ -1,11 +1,14 @@
 ﻿using System.Text.Json;
 using System.Text.Json.Nodes;
+using Discord;
+using LBPUnion.AgentWashington.Core.Persistence;
 using LBPUnion.AgentWashington.Core.Settings;
 
 namespace LBPUnion.HttpMonitor.Settings;
 
 public class MonitorSettingsProvider : ISettingsGroup
 {
+    private DatabaseManager _db;
     private MonitorSettingsData _data = new();
     
     public bool TryGetStatusHistoryChannel(ulong guild, out ulong channel)
@@ -32,7 +35,24 @@ public class MonitorSettingsProvider : ISettingsGroup
 
     internal void SetLiveStatusChannelMessage(ulong channel, ulong message)
     {
-        // TODO.
+        _db.OpenDatabase((db) =>
+        {
+            var maps = db.GetCollection<LiveStatusMessageMap>("liveStatusChannels");
+
+            var map = maps.FindOne(x => x.Channel == channel.ToString());
+            if (map != null)
+            {
+                map.Message = message.ToString();
+                maps.Update(map);
+            }
+            else
+            {
+                map = new LiveStatusMessageMap();
+                map.Channel = channel.ToString();
+                map.Message = message.ToString();
+                maps.Insert(map);
+            }
+        });
     }
 
     internal void SetLiveStatusGuildChannel(ulong guild, ulong channel)
@@ -61,9 +81,18 @@ public class MonitorSettingsProvider : ISettingsGroup
 
     public bool TryGetLiveStatusMessage(ulong channel, out ulong message)
     {
-        // TODO
-        message = 0;
-        return false;
+        var msg = 0ul;
+
+        _db.OpenDatabase(db =>
+        {
+            var maps = db.GetCollection<LiveStatusMessageMap>("liveStatusChannels");
+            var map = maps.FindOne(x => x.Channel == channel.ToString());
+            if (map != null)
+                msg = ulong.Parse(map.Message);
+        });
+        
+        message = msg;
+        return message != 0;
     }
     
     public bool TryGetGuildLiveStatusChannelId(ulong guild, out ulong channel)
@@ -82,7 +111,7 @@ public class MonitorSettingsProvider : ISettingsGroup
 
     public void OnRegister(SettingsManager manager)
     {
-        
+        _db = manager.Modules.GetModule<DatabaseManager>();
     }
 
     public void InitializeDefaults()
@@ -139,5 +168,12 @@ public class MonitorSettingsProvider : ISettingsGroup
         public List<MonitorTarget> Servers = new();
         public ulong LiveStatusChannel { get; set; }
         public ulong HistoryChannel { get; set; }
+    }
+
+    private class LiveStatusMessageMap : IDatabaseObject
+    {
+        public Guid Id { get; set; }
+        public string Channel { get; set; }
+        public string Message { get; set; }
     }
 }

@@ -9,7 +9,7 @@ public abstract class BotModule
     
     public virtual string Name => GetType().Name;
 
-    protected ModuleManager Modules => _moduleManager;
+    public ModuleManager Modules => _moduleManager;
     
     internal void Bootstrap(ModuleManager moduleManager)
     {

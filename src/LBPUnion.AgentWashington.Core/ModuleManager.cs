@@ -1,6 +1,7 @@
 ﻿using System.Diagnostics;
 using LBPUnion.AgentWashington.Core.Logging;
 using LBPUnion.AgentWashington.Core.Permissions;
+using LBPUnion.AgentWashington.Core.Persistence;
 using LBPUnion.AgentWashington.Core.Plugins;
 using LBPUnion.AgentWashington.Core.Settings;
 
@@ -56,6 +57,7 @@ public class ModuleManager
         }
 
         Logger.Log("Registering core modules...");
+        RegisterModule(new DatabaseManager());
         RegisterModule(new SettingsManager());
         RegisterModule(new CommandManager());
         RegisterModule(new PermissionManager());
