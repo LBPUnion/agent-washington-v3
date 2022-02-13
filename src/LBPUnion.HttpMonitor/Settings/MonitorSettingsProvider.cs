@@ -6,43 +6,65 @@ namespace LBPUnion.HttpMonitor.Settings;
 
 public class MonitorSettingsProvider : ISettingsGroup
 {
-    private List<MonitorTarget> _targets = new List<MonitorTarget>();
-    private Dictionary<ulong, ulong> _liveStatusChannels = new Dictionary<ulong, ulong>();
-    private Dictionary<ulong, ulong> _liveStatusMessages = new();
-    private Dictionary<ulong, ulong> _historyChannels = new Dictionary<ulong, ulong>();
-
+    private MonitorSettingsData _data = new();
+    
     public bool TryGetStatusHistoryChannel(ulong guild, out ulong channel)
     {
-        return _historyChannels.TryGetValue(guild, out channel);
+        channel = 0;
+        var guildData = _data.Guilds.FirstOrDefault(x => x.Guild == guild);
+        if (guildData == null)
+            return false;
+
+        channel = guildData.HistoryChannel;
+        return true;
     }
-    
+
+    public bool TargetExistsInGuild(ulong guildId, string name)
+    {
+        var guildData = _data.Guilds.FirstOrDefault(x => x.Guild == guildId);
+        if (guildData == null)
+            return false;
+
+        return guildData.Servers.Any(x => x.Name == name);
+    }
+
     internal void SetLiveStatusChannelMessage(ulong channel, ulong message)
     {
-        if (_liveStatusMessages.ContainsKey(channel))
-            _liveStatusMessages[channel] = message;
-        else
-            _liveStatusMessages.Add(channel, message);
+        // TODO.
     }
 
     internal void SetLiveStatusGuildChannel(ulong guild, ulong channel)
     {
-        if (_liveStatusChannels.ContainsKey(guild))
-            _liveStatusChannels.Add(guild, channel);
-        else
-            _liveStatusChannels[guild] = channel;
+        var guildData = _data.Guilds.FirstOrDefault(x => x.Guild == guild);
+        if (guildData == null)
+        {
+            guildData = new MonitorGuild() {Guild = guild};
+            _data.Guilds.Add(guildData);
+        }
+
+        guildData.LiveStatusChannel = channel;
     }
     
     public bool TryGetLiveStatusMessage(ulong channel, out ulong message)
     {
-        return _liveStatusMessages.TryGetValue(channel, out message);
+        // TODO
+        message = 0;
+        return false;
     }
     
     public bool TryGetGuildLiveStatusChannelId(ulong guild, out ulong channel)
     {
-        return _liveStatusChannels.TryGetValue(guild, out channel);
+        channel = 0;
+        var guildData = _data.Guilds.FirstOrDefault(x => x.Guild == guild);
+        if (guildData == null)
+            return false;
+
+        channel = guildData.LiveStatusChannel;
+        return true;
     }
+
+    internal IEnumerable<MonitorTarget> Targets => _data.Guilds.SelectMany(guild => guild.Servers);
     
-    internal IEnumerable<MonitorTarget> Targets => _targets;
 
     public void OnRegister(SettingsManager manager)
     {
@@ -51,129 +73,57 @@ public class MonitorSettingsProvider : ISettingsGroup
 
     public void InitializeDefaults()
     {
-        _liveStatusChannels = new();
-        _targets.Clear();
+        _data = new();
     }
 
     public void Serialize(JsonObject settingsData)
     {
-        var array = new JsonArray();
-        foreach (var target in _targets)
-        {
-            array.Add(target);
-        }
-
-        settingsData.Add("targets", array);
-
-        var liveChannels = new JsonObject();
-
-        foreach (var guild in _liveStatusChannels)
-        {
-            liveChannels.Add(guild.Key.ToString(), guild.Value.ToString());
-        }
-        
-        settingsData.Add("liveChannels", liveChannels);
-        
-        var liveChannelMessages = new JsonObject();
-
-        foreach (var guild in _liveStatusMessages)
-        {
-            liveChannelMessages.Add(guild.Key.ToString(), guild.Value.ToString());
-        }
-        
-        settingsData.Add("liveChannelMessages", liveChannelMessages);
-        
-        var historyChannels = new JsonObject();
-
-        foreach (var guild in _historyChannels)
-        {
-            historyChannels.Add(guild.Key.ToString(), guild.Value.ToString());
-        }
-        
-        settingsData.Add("historyChannels", historyChannels);
+        settingsData.Add("monitorSettings", JsonSerializer.SerializeToNode(_data));
     }
 
     public void Deserialize(JsonObject settingsData)
     {
-        if (settingsData.TryGetPropertyValue("targets", out var targetsNode))
+        if (settingsData.TryGetPropertyValue("monitorSettings", out var node))
         {
-            if (targetsNode is JsonArray array)
+            if (node is JsonObject obj)
             {
-                _targets.Clear();
-                foreach (var elem in array)
-                {
-                    if (elem is JsonObject elemObject)
-                    {
-                        var target = elemObject.Deserialize<MonitorTarget>();
-                        if (target != null)
-                            _targets.Add(target);
-                    }
-                }
-            }
-        }
-
-        if (settingsData.TryGetPropertyValue("liveChannels", out var node))
-        {
-            if (node is JsonObject liveChannels)
-            {
-                foreach (var key in liveChannels)
-                {
-                    if (ulong.TryParse(key.Key, out var guild)
-                        && ulong.TryParse(key.Value?.GetValue<string>(), out var channel))
-                    {
-                        if (_liveStatusChannels.ContainsKey(guild))
-                            _liveStatusChannels[guild] = channel;
-                        else
-                            _liveStatusChannels.Add(guild, channel);
-                    }
-                }
-            }
-        }
-        
-        if (settingsData.TryGetPropertyValue("liveChannelMessages", out node))
-        {
-            if (node is JsonObject liveChannels)
-            {
-                foreach (var key in liveChannels)
-                {
-                    if (ulong.TryParse(key.Key, out var guild)
-                        && ulong.TryParse(key.Value?.GetValue<string>(), out var channel))
-                    {
-                        if (_liveStatusMessages.ContainsKey(guild))
-                            _liveStatusMessages[guild] = channel;
-                        else
-                            _liveStatusMessages.Add(guild, channel);
-                    }
-                }
-            }
-        }
-        
-        if (settingsData.TryGetPropertyValue("historyChannels", out node))
-        {
-            if (node is JsonObject liveChannels)
-            {
-                foreach (var key in liveChannels)
-                {
-                    if (ulong.TryParse(key.Key, out var guild)
-                        && ulong.TryParse(key.Value?.GetValue<string>(), out var channel))
-                    {
-                        if (_historyChannels.ContainsKey(guild))
-                            _historyChannels[guild] = channel;
-                        else
-                            _historyChannels.Add(guild, channel);
-                    }
-                }
+                _data = obj.Deserialize<MonitorSettingsData>();
             }
         }
     }
 
-    internal void AddTarget(MonitorTarget target)
+    internal void AddTarget(ulong guild, MonitorTarget target)
     {
-        _targets.Add(target);
+        var guildData = _data.Guilds.FirstOrDefault(x => x.Guild == guild);
+        if (guildData == null)
+        {
+            guildData = new MonitorGuild() {Guild = guild};
+            _data.Guilds.Add(guildData);
+        }
+
+        guildData.Servers.Add(target);
     }
 
-    internal void DeleteTarget(MonitorTarget target)
+    internal void DeleteTarget(ulong guild, MonitorTarget target)
     {
-        _targets.Remove(target);
+        var guildData = _data.Guilds.FirstOrDefault(x => x.Guild == guild);
+        if (guildData != null)
+        {
+            if (guildData.Servers.Contains(target))
+                guildData.Servers.Remove(target);
+        }
+    }
+
+    private class MonitorSettingsData
+    {
+        public List<MonitorGuild> Guilds { get; set; } = new();
+    }
+
+    private class MonitorGuild
+    {
+        public ulong Guild { get; set; }
+        public List<MonitorTarget> Servers = new();
+        public ulong LiveStatusChannel { get; set; }
+        public ulong HistoryChannel { get; set; }
     }
 }

@@ -43,15 +43,15 @@ public class MonitorPlugin : BotModule
         _commands.RegisterCommand<RemoveMonitorCommand>();
     }
 
-    internal void AddTarget(MonitorTarget target)
+    internal void AddTarget(SocketGuild guild, MonitorTarget target)
     {
-        _monitorSettings.AddTarget(target);
+        _monitorSettings.AddTarget(guild.Id, target);
         _settings.SaveSettings();
     }
 
-    internal bool TargetExists(string name)
+    internal bool TargetExists(SocketGuild guild, string name)
     {
-        return _monitorSettings.Targets.Any(x => x.Name == name);
+        return _monitorSettings.TargetExistsInGuild(guild.Id, name);
     }
 
     private void UpdateMonitors()
@@ -149,12 +149,12 @@ public class MonitorPlugin : BotModule
         }
     }
 
-    internal void DeleteTarget(string targetName)
+    internal void DeleteTarget(SocketGuild guild, string targetName)
     {
         var target = _monitorSettings.Targets.FirstOrDefault(x => x.Name == targetName);
         if (target != null)
         {
-            _monitorSettings.DeleteTarget(target);
+            _monitorSettings.DeleteTarget(guild.Id, target);
             _settings.SaveSettings();
         }
     }

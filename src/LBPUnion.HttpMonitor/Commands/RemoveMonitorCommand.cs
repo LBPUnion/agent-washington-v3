@@ -24,9 +24,9 @@ public class RemoveMonitorCommand : Command
         var name = GetArgument<string>("name");
         var monitor = Modules.GetModule<MonitorPlugin>();
 
-        if (monitor.TargetExists(name))
+        if (monitor.TargetExists(Guild, name))
         {
-            monitor.DeleteTarget(name);
+            monitor.DeleteTarget(Guild, name);
             var embed = new EmbedBuilder();
             embed.WithColor(Color.Green);
             embed.WithTitle($"Server deleted: {name}");

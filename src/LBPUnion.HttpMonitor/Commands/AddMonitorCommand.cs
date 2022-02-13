@@ -53,7 +53,7 @@ public class AddMonitorCommand : Command
         if (!TryGetArgument<bool>("trust-all-certs", out var trustAll))
             trustAll = false;
 
-        if (monitor.TargetExists(name))
+        if (monitor.TargetExists(Guild, name))
         {
             var error = new EmbedBuilder();
             error.WithColor(Color.Red);
@@ -74,7 +74,7 @@ public class AddMonitorCommand : Command
             UseSsl = https,
             IgnoreSslCertErrors = trustAll
         };
-        monitor.AddTarget(target);
+        monitor.AddTarget(this.Guild, target);
         
         var builder = new EmbedBuilder();
         builder.WithColor(Color.Green);
