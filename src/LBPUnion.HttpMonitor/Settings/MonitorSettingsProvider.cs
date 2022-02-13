@@ -165,7 +165,7 @@ public class MonitorSettingsProvider : ISettingsGroup
     internal class MonitorGuild
     {
         public ulong Guild { get; set; }
-        public List<MonitorTarget> Servers = new();
+        public List<MonitorTarget> Servers { get;set; } = new();
         public ulong LiveStatusChannel { get; set; }
         public ulong HistoryChannel { get; set; }
     }
