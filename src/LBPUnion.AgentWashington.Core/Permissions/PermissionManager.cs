@@ -37,6 +37,10 @@ public class PermissionManager : BotModule
             // Guild ID.
             var guild = guildMember.Guild.Id;
             
+            // If the user has the Discord "Administrator" permission, treat them as an admin.
+            if (guildMember.GuildPermissions.Administrator)
+                return PermissionLevel.Administrator;
+            
             // Retrieve the guild's permission table.
             if (_permSettings.TryGetGuildPermissions(guild, out var guildPerms))
             {
