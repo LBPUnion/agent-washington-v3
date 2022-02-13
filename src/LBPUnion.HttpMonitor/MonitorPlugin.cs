@@ -44,6 +44,7 @@ public class MonitorPlugin : BotModule
         _database = Modules.GetModule<DatabaseManager>();
         _commands.RegisterCommand<AddMonitorCommand>();
         _commands.RegisterCommand<RemoveMonitorCommand>();
+        _commands.RegisterCommand<AddStatusException>();
         
         Logger.Log("Registering configurables for Monitor Plugin...");
 
@@ -63,7 +64,12 @@ public class MonitorPlugin : BotModule
         return _monitorSettings.TargetExistsInGuild(guild.Id, name);
     }
 
-    private void UpdateMonitors()
+    internal void ForceUpdate()
+    {
+        UpdateMonitors(true);
+    }
+
+    private void UpdateMonitors(bool force = false)
     {
         if (_liveStatus == null)
         {
@@ -95,9 +101,9 @@ public class MonitorPlugin : BotModule
                 Logger.Log($"Updating server: {targetKey}");
                 var status = _statuses[targetKey];
                 
-                status.CheckStatus(_monitorSettings);
+                status.CheckStatus(_monitorSettings, force);
 
-                if (status.HasStatusChanged)
+                if (status.HasStatusChanged || force)
                 {
                     var bot = Modules.GetModule<DiscordBot>();
                     UpdateStatusHistoryAsync(bot, guild, status).Wait();
@@ -134,7 +140,7 @@ public class MonitorPlugin : BotModule
                         builder.AddField("Status", "Server Unreachable");
                         builder.AddField("Reason", "Agent Washington failed to resolve the hostname.");
                         break;
-                    case ServerStatus.Unknown:
+                    case ServerStatus.Online:
                         builder.WithColor(Color.Green);
                         builder.AddField("Status", "Online");
                         builder.AddField("Status Code", status.StatusCode);

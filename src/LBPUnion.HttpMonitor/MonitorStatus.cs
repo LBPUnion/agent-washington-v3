@@ -87,11 +87,11 @@ public sealed class MonitorStatus
         });
     }
     
-    internal void CheckStatus(MonitorSettingsProvider settings)
+    internal void CheckStatus(MonitorSettingsProvider settings, bool ignoreHistory)
     {
 #pragma warning disable CS0618
         var url = Url;
-
+        
         RestoreFromDatabase();
         
         var oldStatus = _status;
@@ -112,7 +112,7 @@ public sealed class MonitorStatus
         {
             Logger.Log($"[{_target.Name}]: DNS lookup error - {ex.Message}", LogLevel.Error);
             _status = ServerStatus.DnsError;
-            UpdateStatusHistory(settings, oldStatus, oldCode);
+            UpdateStatusHistory(settings, oldStatus, oldCode, ignoreHistory);
             return;
         }
         
@@ -140,6 +140,12 @@ public sealed class MonitorStatus
                 _status = ServerStatus.Offline;
                 _statusCode = (int) res.StatusCode;
 
+                if (_target.ErrorCodeExceptions.Contains(_statusCode))
+                {
+                    _status = ServerStatus.Online;
+                    _statusCode = 200;
+                }
+                
                 Logger.Log(
                     $"[{_target.Name}] Server responded with an error. {ex.Message} (status code {_statusCode})");
             }
@@ -159,16 +165,16 @@ public sealed class MonitorStatus
             ServicePointManager.ServerCertificateValidationCallback -= IgnoreCertChecks;
         }
         
-        UpdateStatusHistory(settings, oldStatus, oldCode);
+        UpdateStatusHistory(settings, oldStatus, oldCode, ignoreHistory);
         
 #pragma warning restore CS0618
 
         UpdateDatabase();
     }
 
-    private void UpdateStatusHistory(MonitorSettingsProvider settings, ServerStatus oldStatus, int oldCode)
+    private void UpdateStatusHistory(MonitorSettingsProvider settings, ServerStatus oldStatus, int oldCode, bool ignoreHistory)
     {
-        _hasChanged = (oldStatus != _status || oldCode != _statusCode);
+        _hasChanged = ignoreHistory || (oldStatus != _status || oldCode != _statusCode);
     }
 
     private bool IgnoreCertChecks(object sender, X509Certificate? certificate, X509Chain? chain, SslPolicyErrors sslpolicyerrors)

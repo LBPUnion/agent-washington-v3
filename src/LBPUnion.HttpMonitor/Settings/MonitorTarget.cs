@@ -8,4 +8,5 @@ public class MonitorTarget
     public string Host { get; set; }
     public ushort Port { get; set; }
     public string Path { get; set; }
+    public List<int> ErrorCodeExceptions { get; set; } = new();
 }
