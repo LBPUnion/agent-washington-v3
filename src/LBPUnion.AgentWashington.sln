@@ -18,6 +18,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Root", "Root", "{7497E0EC-8
 		..\README.md = ..\README.md
 	EndProjectSection
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LBPUnion.TwitterMonitor", "LBPUnion.TwitterMonitor\LBPUnion.TwitterMonitor.csproj", "{3A080B28-BD10-4D21-8592-98AFF015F959}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -36,8 +38,13 @@ Global
 		{8663CD8B-3289-467E-B31F-DF81775A6B91}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{8663CD8B-3289-467E-B31F-DF81775A6B91}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{8663CD8B-3289-467E-B31F-DF81775A6B91}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3A080B28-BD10-4D21-8592-98AFF015F959}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3A080B28-BD10-4D21-8592-98AFF015F959}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3A080B28-BD10-4D21-8592-98AFF015F959}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3A080B28-BD10-4D21-8592-98AFF015F959}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{8663CD8B-3289-467E-B31F-DF81775A6B91} = {EF4BD420-66C4-405E-944C-DB600DC05049}
+		{3A080B28-BD10-4D21-8592-98AFF015F959} = {EF4BD420-66C4-405E-944C-DB600DC05049}
 	EndGlobalSection
 EndGlobal
