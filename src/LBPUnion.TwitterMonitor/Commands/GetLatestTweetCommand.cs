@@ -1,16 +1,26 @@
 using Discord;
 using LBPUnion.AgentWashington.Core;
+using TwitterSharp.Request.AdvancedSearch;
 using TwitterSharp.Request.Option;
 using TwitterSharp.Response.RTweet;
 
 namespace LBPUnion.TwitterMonitor.Commands; 
 
 public class GetLatestTweetCommand : Command {
+    public override string Name => "get-latest-tweet";
+
+    public override string Description => "Gets the latest tweet from the linked twitter account.";
+
     protected override async Task OnHandle() {
         MonitorPlugin monitor = Modules.GetModule<MonitorPlugin>();
 
-        Tweet[]? tweets = await monitor.TwitterClient.GetTweetsFromUserIdAsync(MonitorPlugin.TwitterAccountID.ToString(), new TweetSearchOptions() {
-            Limit = 1,
+        Tweet[]? tweets = await monitor.TwitterClient.GetTweetsFromUserIdAsync(MonitorPlugin.TwitterAccountID.ToString(), new TweetSearchOptions {
+            TweetOptions = Array.Empty<TweetOption>(),
+            MediaOptions = Array.Empty<MediaOption>(),
+            UserOptions = new[] {
+                UserOption.Url,
+            },
+            Limit = 5,
         });
         if(tweets == null) {
             EmbedBuilder error = new();
@@ -21,14 +31,14 @@ public class GetLatestTweetCommand : Command {
             RespondWithEmbed(error.Build());
         }
         else {
-            foreach(Tweet tweet in tweets) {
-                EmbedBuilder embed = new();
-                embed.WithColor(new Color(0, 140, 255));
-                embed.WithTitle(tweet.Author.Name);
-                embed.WithDescription(tweet.Text);
+            Tweet tweet = tweets[0];
+            
+            EmbedBuilder embed = new();
+            embed.WithColor(new Color(0, 140, 255));
+            embed.WithTitle(tweet.Author.Name);
+            embed.WithDescription(tweet.Text);
 
-                RespondWithEmbed(embed.Build());
-            }
+            RespondWithEmbed(embed.Build());
         }
     }
 }
