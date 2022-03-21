@@ -12,9 +12,9 @@ public class GetLatestTweetCommand : Command {
     public override string Description => "Gets the latest tweet from the linked twitter account.";
 
     protected override async Task OnHandle() {
-        MonitorPlugin monitor = Modules.GetModule<MonitorPlugin>();
+        TwitterMonitorPlugin twitterMonitor = Modules.GetModule<TwitterMonitorPlugin>();
 
-        Tweet[]? tweets = await monitor.TwitterClient.GetTweetsFromUserIdAsync(MonitorPlugin.TwitterAccountID.ToString(), new TweetSearchOptions {
+        Tweet[]? tweets = await twitterMonitor.TwitterClient.GetTweetsFromUserIdAsync(twitterMonitor.GetTwitterUserId().ToString(), new TweetSearchOptions {
             TweetOptions = Array.Empty<TweetOption>(),
             MediaOptions = Array.Empty<MediaOption>(),
             UserOptions = new[] {
