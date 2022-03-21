@@ -14,15 +14,9 @@ public class GetLatestTweetCommand : Command {
     protected override async Task OnHandle() {
         TwitterMonitorPlugin twitterMonitor = Modules.GetModule<TwitterMonitorPlugin>();
 
-        Tweet[]? tweets = await twitterMonitor.TwitterClient.GetTweetsFromUserIdAsync(twitterMonitor.GetTwitterUserId().ToString(), new TweetSearchOptions {
-            TweetOptions = Array.Empty<TweetOption>(),
-            MediaOptions = Array.Empty<MediaOption>(),
-            UserOptions = new[] {
-                UserOption.Url,
-            },
-            Limit = 5,
-        });
-        if(tweets == null) {
+        Tweet[]? tweets = await twitterMonitor.FetchTweets(Guild.Id);
+        
+        if(tweets == null || tweets.Length < 1) {
             EmbedBuilder error = new();
             error.WithColor(Color.Red);
             error.WithTitle("Cannot fetch tweets");
@@ -32,13 +26,7 @@ public class GetLatestTweetCommand : Command {
         }
         else {
             Tweet tweet = tweets[0];
-            
-            EmbedBuilder embed = new();
-            embed.WithColor(new Color(0, 140, 255));
-            embed.WithTitle(tweet.Author.Name);
-            embed.WithDescription(tweet.Text);
-
-            RespondWithEmbed(embed.Build());
+            RespondWithEmbed(tweet.ToEmbed());
         }
     }
 }

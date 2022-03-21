@@ -6,6 +6,9 @@ using LBPUnion.TwitterMonitor.Commands;
 using LBPUnion.TwitterMonitor.Settings;
 using LBPUnion.TwitterMonitor.Settings.Configurables;
 using TwitterSharp.Client;
+using TwitterSharp.Request.AdvancedSearch;
+using TwitterSharp.Request.Option;
+using TwitterSharp.Response.RTweet;
 
 namespace LBPUnion.TwitterMonitor; 
 
@@ -16,6 +19,9 @@ public class TwitterMonitorPlugin : BotModule {
     private TwitterSettingsProvider _twitterSettings;
 
     internal TwitterClient TwitterClient;
+
+    private const double _updateInterval = 30;
+    private double _timeUntilNextUpdate = 0;
     
     protected override void BeforeInit() {
         Logger.Log("It's time to waste cycles and look for tweets... ...and I'm all out of cycles.");
@@ -43,11 +49,42 @@ public class TwitterMonitorPlugin : BotModule {
         this._commands.RegisterCommand<GetLatestTweetCommand>();
     }
 
-    public ulong GetTwitterUserId() {
-        if(this._twitterSettings.TryGetTwitterUserId(out ulong userId)) {
+    public ulong GetTwitterUserId(ulong guildId) {
+        if(this._twitterSettings.TryGetTwitterUserId(guildId, out ulong userId)) {
             return userId;
         }
         
         return 0;
+    }
+
+    public async Task<Tweet[]?> FetchTweets(ulong guildId) {
+        Logger.Log("Fetching tweets for guildId " + guildId);
+        
+        return await TwitterClient.GetTweetsFromUserIdAsync(GetTwitterUserId(guildId).ToString(), new TweetSearchOptions {
+            TweetOptions = Array.Empty<TweetOption>(),
+            MediaOptions = Array.Empty<MediaOption>(),
+            UserOptions = new[] {
+                UserOption.Url,
+            },
+            Limit = 5,
+            // The minimum twitter accepts is 5, for some reason. If we ignore it, twitter fires back a 400 bad request.
+            // The latest tweet is tweets[0].
+        });
+    }
+
+    protected override void OnTick(UpdateInterval interval) {
+        _timeUntilNextUpdate -= interval.DeltaTime.TotalSeconds;
+        if(_timeUntilNextUpdate <= 0) {
+            Logger.Log("It's time to check servers for tweets!");
+            DiscordBot bot = Modules.GetModule<DiscordBot>();
+
+            foreach(TwitterMonitorGuild guild in this._twitterSettings.GetGuilds()) {
+                Tweet[]? tweets = this.FetchTweets(guild.GuildId).Result;
+            }
+
+//            bot.GetGuilds()
+
+            _timeUntilNextUpdate = _updateInterval;
+        }
     }
 }

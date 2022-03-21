@@ -27,6 +27,10 @@ public class TwitterSettingsProvider : ISettingsGroup {
         }
     }
 
+    public List<TwitterMonitorGuild> GetGuilds() {
+        return this._data.Guilds;
+    }
+
     public bool TryGetBearerToken(out string token) {
         token = string.Empty;
         
@@ -36,16 +40,29 @@ public class TwitterSettingsProvider : ISettingsGroup {
         return true;
     }
 
-    public bool TryGetTwitterUserId(out ulong userId) {
+    public bool TryGetTwitterUserId(ulong guildId, out ulong userId) {
         userId = 0;
 
-        if(this._data.UserId == null) return false;
+        TwitterMonitorGuild? guild = this._data.Guilds.FirstOrDefault(g => g.GuildId == guildId); 
+        if(guild != null) {
+            if(guild.TwitterUserId == null) return false;
 
-        userId = (ulong)this._data.UserId;
-        return true;
+            userId = (ulong)guild.TwitterUserId;
+            return true;
+        }
+        return false;
     }
     
-    public void SetTwitterUserId(ulong userId) {
-        this._data.UserId = userId;
+    public void SetTwitterUserId(ulong guildId, ulong userId) {
+        TwitterMonitorGuild? guild = this._data.Guilds.FirstOrDefault(g => g.GuildId == guildId);
+        if(guild == null) {
+            guild = new TwitterMonitorGuild {
+                GuildId = guildId,
+            };
+            
+            this._data.Guilds.Add(guild);
+        }
+
+        guild.TwitterUserId = userId;
     }
 }
