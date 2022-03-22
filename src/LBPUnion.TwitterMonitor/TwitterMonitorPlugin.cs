@@ -1,3 +1,4 @@
+using Discord.WebSocket;
 using LBPUnion.AgentWashington.Core;
 using LBPUnion.AgentWashington.Core.Logging;
 using LBPUnion.AgentWashington.Core.Plugins;
@@ -44,6 +45,7 @@ public class TwitterMonitorPlugin : BotModule {
 
         Logger.Log("Registering configurables...");
         _settings.RegisterConfigurable("twitter.userId", new TwitterUserIdConfigurable());
+        _settings.RegisterConfigurable("twitter.updateChannelId", new UpdateChannelIdConfigurable());
 
         Logger.Log("Registering commands...");
         this._commands.RegisterCommand<GetLatestTweetCommand>();
@@ -77,9 +79,18 @@ public class TwitterMonitorPlugin : BotModule {
         if(_timeUntilNextUpdate <= 0) {
             Logger.Log("It's time to check servers for tweets!");
             DiscordBot bot = Modules.GetModule<DiscordBot>();
+            List<SocketGuild> socketGuilds = bot.GetGuilds().ToList();
 
             foreach(TwitterMonitorGuild guild in this._twitterSettings.GetGuilds()) {
+                if(guild.TwitterUserId == null || guild.UpdateChannelId == null) continue;
+                
                 Tweet[]? tweets = this.FetchTweets(guild.GuildId).Result;
+                if(tweets == null || tweets.Length < 1) continue;
+
+                SocketGuild? socketGuild = socketGuilds.FirstOrDefault(g => g.Id == guild.GuildId);
+                SocketTextChannel? channel = socketGuild?.TextChannels.FirstOrDefault(c => c.Id == guild.UpdateChannelId);
+
+                channel?.SendMessageAsync(embed: tweets[0].ToEmbed());
             }
 
 //            bot.GetGuilds()

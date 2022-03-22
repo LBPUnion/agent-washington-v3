@@ -27,6 +27,19 @@ public class TwitterSettingsProvider : ISettingsGroup {
         }
     }
 
+    private TwitterMonitorGuild getOrCreateGuild(ulong guildId) {
+        TwitterMonitorGuild? guild = this._data.Guilds.FirstOrDefault(g => g.GuildId == guildId);
+        if(guild == null) {
+            guild = new TwitterMonitorGuild {
+                GuildId = guildId,
+            };
+
+            this._data.Guilds.Add(guild);
+        }
+
+        return guild;
+    }
+
     public List<TwitterMonitorGuild> GetGuilds() {
         return this._data.Guilds;
     }
@@ -54,15 +67,25 @@ public class TwitterSettingsProvider : ISettingsGroup {
     }
     
     public void SetTwitterUserId(ulong guildId, ulong userId) {
-        TwitterMonitorGuild? guild = this._data.Guilds.FirstOrDefault(g => g.GuildId == guildId);
-        if(guild == null) {
-            guild = new TwitterMonitorGuild {
-                GuildId = guildId,
-            };
-            
-            this._data.Guilds.Add(guild);
-        }
-
+        TwitterMonitorGuild guild = getOrCreateGuild(guildId);
         guild.TwitterUserId = userId;
+    }
+
+    public bool TryGetUpdateChannelId(ulong guildId, out ulong channelId) {
+        channelId = 0;
+
+        TwitterMonitorGuild? guild = this._data.Guilds.FirstOrDefault(g => g.GuildId == guildId);
+        if(guild != null) {
+            if(guild.UpdateChannelId == null) return false;
+
+            channelId = (ulong)guild.UpdateChannelId;
+            return true;
+        }
+        return false;
+    }
+
+    public void SetUpdateChannelId(ulong guildId, ulong channelId) {
+        TwitterMonitorGuild guild = getOrCreateGuild(guildId);
+        guild.UpdateChannelId = channelId;
     }
 }
