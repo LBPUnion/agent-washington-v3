@@ -14,7 +14,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <PackageReference Include="TwitterSharp" Version="2.0.0" />
+      <PackageReference Include="TwitterSharp" Version="2.1.0" />
     </ItemGroup>
 
 </Project>

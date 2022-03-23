@@ -59,7 +59,7 @@ public class TwitterMonitorPlugin : BotModule {
         return 0;
     }
 
-    public async Task<Tweet[]?> FetchTweets(ulong guildId) {
+    public async Task<Tweet[]?> FetchLatestTweets(ulong guildId) {
         Logger.Log("Fetching tweets for guildId " + guildId);
         
         return await TwitterClient.GetTweetsFromUserIdAsync(GetTwitterUserId(guildId).ToString(), new TweetSearchOptions {
@@ -68,9 +68,7 @@ public class TwitterMonitorPlugin : BotModule {
             UserOptions = new[] {
                 UserOption.Url,
             },
-            Limit = 5,
-            // The minimum twitter accepts is 5, for some reason. If we ignore it, twitter fires back a 400 bad request.
-            // The latest tweet is tweets[0].
+            SinceId = "1501764012144574465",
         });
     }
 
@@ -84,16 +82,16 @@ public class TwitterMonitorPlugin : BotModule {
             foreach(TwitterMonitorGuild guild in this._twitterSettings.GetGuilds()) {
                 if(guild.TwitterUserId == null || guild.UpdateChannelId == null) continue;
                 
-                Tweet[]? tweets = this.FetchTweets(guild.GuildId).Result;
+                Tweet[]? tweets = this.FetchLatestTweets(guild.GuildId).Result;
                 if(tweets == null || tweets.Length < 1) continue;
 
                 SocketGuild? socketGuild = socketGuilds.FirstOrDefault(g => g.Id == guild.GuildId);
                 SocketTextChannel? channel = socketGuild?.TextChannels.FirstOrDefault(c => c.Id == guild.UpdateChannelId);
-
-                channel?.SendMessageAsync(embed: tweets[0].ToEmbed());
+                
+                foreach(Tweet tweet in tweets.Reverse()) { // Reverse to put the list in oldest-first order
+                    channel?.SendMessageAsync(embed: tweet.ToEmbed()).Wait(); // Ticks are not asynchronous, so this will have to do.
+                }
             }
-
-//            bot.GetGuilds()
 
             _timeUntilNextUpdate = _updateInterval;
         }

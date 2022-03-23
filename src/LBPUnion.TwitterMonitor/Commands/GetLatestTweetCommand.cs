@@ -14,7 +14,7 @@ public class GetLatestTweetCommand : Command {
     protected override async Task OnHandle() {
         TwitterMonitorPlugin twitterMonitor = Modules.GetModule<TwitterMonitorPlugin>();
 
-        Tweet[]? tweets = await twitterMonitor.FetchTweets(Guild.Id);
+        Tweet[]? tweets = await twitterMonitor.FetchLatestTweets(Guild.Id);
         
         if(tweets == null || tweets.Length < 1) {
             EmbedBuilder error = new();
