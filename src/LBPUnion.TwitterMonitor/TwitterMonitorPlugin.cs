@@ -1,11 +1,14 @@
 using Discord.WebSocket;
 using LBPUnion.AgentWashington.Core;
 using LBPUnion.AgentWashington.Core.Logging;
+using LBPUnion.AgentWashington.Core.Persistence;
 using LBPUnion.AgentWashington.Core.Plugins;
 using LBPUnion.AgentWashington.Core.Settings;
 using LBPUnion.TwitterMonitor.Commands;
+using LBPUnion.TwitterMonitor.Database;
 using LBPUnion.TwitterMonitor.Settings;
 using LBPUnion.TwitterMonitor.Settings.Configurables;
+using LiteDB;
 using TwitterSharp.Client;
 using TwitterSharp.Request.AdvancedSearch;
 using TwitterSharp.Request.Option;
@@ -17,6 +20,7 @@ namespace LBPUnion.TwitterMonitor;
 public class TwitterMonitorPlugin : BotModule {
     private CommandManager _commands;
     private SettingsManager _settings;
+    private DatabaseManager _database;
     private TwitterSettingsProvider _twitterSettings;
 
     internal TwitterClient TwitterClient;
@@ -29,6 +33,7 @@ public class TwitterMonitorPlugin : BotModule {
 
         this._settings = Modules.GetModule<SettingsManager>(); 
         this._commands = Modules.GetModule<CommandManager>();
+        this._database = Modules.GetModule<DatabaseManager>();
     }
 
     protected override void Init() {
@@ -62,16 +67,54 @@ public class TwitterMonitorPlugin : BotModule {
     public async Task<Tweet[]?> FetchLatestTweets(ulong guildId) {
         Logger.Log("Fetching tweets for guildId " + guildId);
         
+        // It's important to not update the latest ID here; the users are supposed to be able to run /get-latest-tweet
+        // Latest ID updates are and should be handled in OnTick.
         return await TwitterClient.GetTweetsFromUserIdAsync(GetTwitterUserId(guildId).ToString(), new TweetSearchOptions {
             TweetOptions = Array.Empty<TweetOption>(),
             MediaOptions = Array.Empty<MediaOption>(),
             UserOptions = new[] {
                 UserOption.Url,
             },
-            SinceId = "1501764012144574465",
+            SinceId = getLatestTweetId(guildId).ToString(),
         });
     }
 
+    private void updateLatestTweetId(ulong guildId, ulong latestTweetId) {
+        this._database.OpenDatabase(db => {
+            ILiteCollection<LatestTweetForGuildData> collection = db.GetCollection<LatestTweetForGuildData>("latestTweetForGuildData");
+
+            LatestTweetForGuildData? data = collection.FindOne(d => d.GuildId == guildId);
+            if(data != null) {
+                data.LatestTweetId = latestTweetId;
+
+                collection.Update(data);
+            }
+            else {
+                data = new LatestTweetForGuildData {
+                    GuildId = guildId,
+                };
+                
+                collection.Insert(data);
+            }
+        });
+    }
+
+    private ulong getLatestTweetId(ulong guildId) {
+        ulong twitterId = 0;
+        
+        this._database.OpenDatabase(db => {
+            ILiteCollection<LatestTweetForGuildData> collection = db.GetCollection<LatestTweetForGuildData>("latestTweetForGuildData");
+
+            LatestTweetForGuildData? data = collection.FindOne(d => d.GuildId == guildId);
+
+            if(data != null) {
+                twitterId = data.LatestTweetId;
+            }
+        });
+
+        return twitterId;
+    }
+    
     protected override void OnTick(UpdateInterval interval) {
         _timeUntilNextUpdate -= interval.DeltaTime.TotalSeconds;
         if(_timeUntilNextUpdate <= 0) {
@@ -91,6 +134,8 @@ public class TwitterMonitorPlugin : BotModule {
                 foreach(Tweet tweet in tweets.Reverse()) { // Reverse to put the list in oldest-first order
                     channel?.SendMessageAsync(embed: tweet.ToEmbed()).Wait(); // Ticks are not asynchronous, so this will have to do.
                 }
+                
+                updateLatestTweetId(guild.GuildId, ulong.Parse(tweets[0].Id));
             }
 
             _timeUntilNextUpdate = _updateInterval;
