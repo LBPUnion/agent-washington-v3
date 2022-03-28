@@ -15,12 +15,12 @@ public class GetLatestTweetCommand : Command {
         TwitterMonitorPlugin twitterMonitor = Modules.GetModule<TwitterMonitorPlugin>();
 
         Tweet[]? tweets = await twitterMonitor.FetchLatestTweets(Guild.Id);
-        
+
         if(tweets == null || tweets.Length < 1) {
             EmbedBuilder error = new();
             error.WithColor(Color.Red);
             error.WithTitle("Cannot fetch tweets");
-            error.WithDescription("An unknown error occurred while attempting to fetch tweets.");
+            error.WithDescription("An unknown error occurred while attempting to fetch tweets.\nPerhaps twitter settings are not configured?");
 
             RespondWithEmbed(error.Build());
         }

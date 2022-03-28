@@ -54,6 +54,7 @@ public class TwitterMonitorPlugin : BotModule {
 
         Logger.Log("Registering commands...");
         this._commands.RegisterCommand<GetLatestTweetCommand>();
+        this._commands.RegisterCommand<ShowTweetCommand>();
     }
 
     public ulong GetTwitterUserId(ulong guildId) {
@@ -64,19 +65,41 @@ public class TwitterMonitorPlugin : BotModule {
         return 0;
     }
 
+    private TweetSearchOptions GetSearchOptions(ulong? guildId = null) {
+        TweetSearchOptions searchOptions = new() {
+            TweetOptions = new[] {
+                TweetOption.Attachments,
+                TweetOption.Created_At,
+                TweetOption.Entities,
+            },
+            MediaOptions = new[] {
+                MediaOption.Url,
+            },
+            UserOptions = new[] {
+                UserOption.Profile_Image_Url,
+                UserOption.Url,
+            },
+        };
+
+        // It's important to not update the latest ID here; the users are supposed to be able to run /get-latest-tweet
+        // Latest ID updates are and should be handled in OnTick.
+        if(guildId != null) {
+            searchOptions.SinceId = getLatestTweetId((ulong)guildId).ToString();
+        }
+
+        return searchOptions;
+    }
+
     public async Task<Tweet[]?> FetchLatestTweets(ulong guildId) {
         Logger.Log("Fetching tweets for guildId " + guildId);
         
-        // It's important to not update the latest ID here; the users are supposed to be able to run /get-latest-tweet
-        // Latest ID updates are and should be handled in OnTick.
-        return await TwitterClient.GetTweetsFromUserIdAsync(GetTwitterUserId(guildId).ToString(), new TweetSearchOptions {
-            TweetOptions = Array.Empty<TweetOption>(),
-            MediaOptions = Array.Empty<MediaOption>(),
-            UserOptions = new[] {
-                UserOption.Url,
-            },
-            SinceId = getLatestTweetId(guildId).ToString(),
-        });
+        return await TwitterClient.GetTweetsFromUserIdAsync(GetTwitterUserId(guildId).ToString(), this.GetSearchOptions(guildId));
+    }
+
+    public async Task<Tweet?> FetchSingleTweet(ulong tweetId) {
+        Logger.Log("Fetching tweetId " + tweetId);
+
+        return await this.TwitterClient.GetTweetAsync(tweetId.ToString(), this.GetSearchOptions());
     }
 
     private void updateLatestTweetId(ulong guildId, ulong latestTweetId) {
