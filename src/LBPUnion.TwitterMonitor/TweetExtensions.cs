@@ -1,4 +1,6 @@
+using System.Diagnostics;
 using Discord;
+using TwitterSharp.Response.Entity;
 using TwitterSharp.Response.RMedia;
 using TwitterSharp.Response.RTweet;
 
@@ -11,7 +13,6 @@ public static class TweetExtensions {
         EmbedBuilder embed = new();
         
         embed.WithAuthor(tweet.Author.Name, tweet.Author.ProfileImageUrl, tweetUrl);
-        embed.WithDescription(tweet.Text);
 
         if(tweet.CreatedAt != null) embed.WithTimestamp((DateTimeOffset)tweet.CreatedAt);
         else embed.WithCurrentTimestamp();
@@ -23,6 +24,29 @@ public static class TweetExtensions {
         if(tweet.Attachments != null && tweet.Attachments.Media.Length != 0) {
             embed.WithImageUrl(tweet.Attachments.Media[0].Url);
         }
+
+        string description = tweet.Text;
+        
+        // Show full URLs instead of twitter shortened URLs
+        foreach(EntityUrl url in tweet.Entities.Urls) {
+            if(!url.DisplayUrl.Contains("pic.twitter.com")) { // Replace normal URLS
+                description = description.Replace(url.Url, url.ExpandedUrl);
+            }
+
+        }
+        
+        // Link to hashtags
+        foreach(EntityTag hashtag in tweet.Entities.Hashtags) {
+            description = description.Replace('#' + hashtag.Tag, $"[#{hashtag.Tag}](https://twitter.com/hashtag/{hashtag.Tag}?src=hashtag_click)");
+        }
+        
+        // Link to mentions
+        // mention.Tag is blank for some reason, so this is disabled for now.
+//        foreach(EntityTag mention in tweet.Entities.Mentions) {
+//            description = description.Replace('@' + mention.Tag, $"[@{mention.Tag}](https://twitter.com/{mention.Tag})");
+//        }
+
+        embed.WithDescription(description);
 
         return embed.Build();
     }
