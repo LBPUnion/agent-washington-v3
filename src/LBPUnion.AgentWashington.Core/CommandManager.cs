@@ -1,5 +1,7 @@
 ﻿using Discord;
+using Discord.Net;
 using Discord.WebSocket;
+using LBPUnion.AgentWashington.Core.Logging;
 
 namespace LBPUnion.AgentWashington.Core;
 
@@ -62,9 +64,23 @@ public class CommandManager : BotModule
 
             foreach (var guild in client.Guilds)
             {
-                var createdCommand =
-                    await guild.CreateApplicationCommandAsync(slashCommand);
-                
+                try {
+                    var createdCommand =
+                        await guild.CreateApplicationCommandAsync(slashCommand);
+                }
+                catch(HttpException ex) {
+                    if(ex.DiscordCode == DiscordErrorCode.MissingPermissions) {
+                        Logger.Log($"The bot does not have permissions to create slash commands for the guild {guild.Id}.", LogLevel.Warning);
+                    }
+                    else {
+                        Logger.Log($"The bot received a discord error while trying to create a slash command for the guild {guild.Id}: {ex.DiscordCode}", LogLevel.Warning);
+                        Logger.Log(ex.ToString(), LogLevel.Warning);
+                    }
+                }
+                catch(Exception ex) {
+                    Logger.Log($"Exception while building a slash command for guild {guild.Id}.", LogLevel.Error);
+                    Logger.Log(ex.ToString(), LogLevel.Error);
+                }
             }
 
         }
