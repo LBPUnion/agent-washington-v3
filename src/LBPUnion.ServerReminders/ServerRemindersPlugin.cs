@@ -126,8 +126,9 @@ public class ServerRemindersPlugin : BotModule
             }
         }
 
-        var deleted = reminderCollection.Find(x => this.reminders.All(y => y.Id != x.Id)).ToArray();
-
+        var all = reminderCollection.FindAll().ToArray();
+        var deleted = all.Where(x => reminders.All(y => y.Id != x.Id)).ToArray();
+        
         foreach (var deletedReminder in deleted)
         {
             Logger.Log($"{deletedReminder.Id} removed from database");
