@@ -14,13 +14,10 @@ public class ServerRemindersPlugin : BotModule
     private DatabaseManager database;
     private SettingsManager settingsManager;
     private CommandManager commandManager;
-    private DiscordBot bot;
     private readonly List<ServerReminder> reminders = new List<ServerReminder>();
 
     protected override void Init()
     {
-        bot = this.Modules.GetModule<DiscordBot>();
-
         RestoreState();
 
         commandManager.RegisterCommand<AddGuildReminder>();
@@ -82,6 +79,7 @@ public class ServerRemindersPlugin : BotModule
 
     private void PostReminder(ServerReminder reminder)
     {
+        var bot = this.Modules.GetModule<DiscordBot>();
         var guilds = bot.GetGuilds();
         var guild = guilds.FirstOrDefault(x => x.Id == reminder.GuildId);
         if (guild == null)
