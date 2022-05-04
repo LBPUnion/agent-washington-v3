@@ -15,7 +15,7 @@ public class AddGuildReminder : Command
         {
             yield return new Option("day-of-week", OptionType.Integer, "Day of week - value between 1 and 7", true);
             yield return new Option("hour", OptionType.Integer, "Hour of day, from 0-23, all times are UTC", true);
-            yield return new Option("channel", OptionType.Integer, "Where should the reminder be posted?", true);
+            yield return new Option("channel", OptionType.String, "Where should the reminder be posted?", true);
             yield return new Option("frequency", OptionType.Integer, "How many weeks between each reminder?", true);
             yield return new Option("message", OptionType.String, "What should be said?", true);
         }
@@ -25,12 +25,15 @@ public class AddGuildReminder : Command
     {
         var text = GetArgument<string>("message");
         var weeks = GetArgument<long>("frequency");
-        var channelId = GetArgument<long>("channel");
+        var channelIdText = GetArgument<string>("channel");
         var hour = GetArgument<long>("hour");
         var day = GetArgument<long>("day-of-week");
         var reminderManager = Modules.GetModule<ServerRemindersPlugin>();
         var guild = this.Guild;
 
+        // who the hell wrote discord
+        ulong.TryParse(channelIdText, out var channelId);
+        
         var embedBuilder = new EmbedBuilder();
 
         var channel = guild.GetTextChannel((ulong) channelId);
