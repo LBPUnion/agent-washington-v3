@@ -19,9 +19,6 @@ public class ServerRemindersPlugin : BotModule
 
     protected override void Init()
     {
-        settingsManager = this.Modules.GetModule<SettingsManager>();
-        database = this.Modules.GetModule<DatabaseManager>();
-        commandManager = this.Modules.GetModule<CommandManager>();
         bot = this.Modules.GetModule<DiscordBot>();
 
         RestoreState();
@@ -32,6 +29,10 @@ public class ServerRemindersPlugin : BotModule
     protected override void BeforeInit()
     {
         Logger.Log("ServerReminders plugin is initializing");
+        settingsManager = this.Modules.GetModule<SettingsManager>();
+        database = this.Modules.GetModule<DatabaseManager>();
+        commandManager = this.Modules.GetModule<CommandManager>();
+
         base.BeforeInit();
     }
 
