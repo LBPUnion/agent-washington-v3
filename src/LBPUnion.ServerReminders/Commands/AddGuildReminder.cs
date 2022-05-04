@@ -6,7 +6,7 @@ namespace LBPUnion.ServerReminders.Commands;
 
 public class AddGuildReminder : Command
 {
-    public override string Name => "addReminder";
+    public override string Name => "add-reminder";
     public override string Description => "Add a recurring server reminder.";
 
     public override IEnumerable<Option> Options
