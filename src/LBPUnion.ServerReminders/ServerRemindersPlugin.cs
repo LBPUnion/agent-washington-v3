@@ -41,6 +41,9 @@ public class ServerRemindersPlugin : BotModule
         {
             if (reminder.DayOfWeek == currentDate.DayOfWeek && reminder.Hour == currentDate.Hour)
             {
+                if (reminder.HasBeenPostedThisHour)
+                    continue;
+                
                 var hasHitMaxWeeks = reminder.WeeksSinceLastUpdate >= reminder.WeeksBetweenUpdate;
                 if (hasHitMaxWeeks)
                     reminder.WeeksSinceLastUpdate = 0;
@@ -51,6 +54,14 @@ public class ServerRemindersPlugin : BotModule
                     PostReminder(reminder);
 
                 SaveState();
+            }
+            else
+            {
+                if (reminder.HasBeenPostedThisHour)
+                {
+                    reminder.HasBeenPostedThisHour = false;
+                    SaveState();
+                }
             }
         }   
     }
@@ -92,6 +103,7 @@ public class ServerRemindersPlugin : BotModule
         try
         {
             textChannel.SendMessageAsync(reminder.Text).GetAwaiter().GetResult();
+            reminder.HasBeenPostedThisHour = true;
         }
         catch (Exception ex)
         {
@@ -135,16 +147,4 @@ public class ServerRemindersPlugin : BotModule
             reminderCollection.Delete(deletedReminder.Id);
         }
     }
-}
-
-public class ServerReminder : IDatabaseObject
-{
-    public int WeeksSinceLastUpdate { get; set; }
-    public int WeeksBetweenUpdate { get; set; }
-    public int Hour { get; set; }
-    public DayOfWeek DayOfWeek { get; set; }
-    public ulong GuildId { get; set; }
-    public ulong ChannelId { get; set; }
-    public string Text { get; set; }
-    public Guid Id { get; set; }
 }
