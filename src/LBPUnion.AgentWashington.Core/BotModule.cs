@@ -38,7 +38,16 @@ public abstract class BotModule
 
     internal void Tick(UpdateInterval interval)
     {
-        OnTick(interval);
+        try
+        {
+            OnTick(interval);
+        }
+        catch (Exception ex)
+        {
+            Logger.Log($"Bot module \"{this.GetType().FullName}\" has thrown an error during the OnTick method.",
+                LogLevel.Error);
+            Logger.Log(ex.ToString(), LogLevel.Error);
+        }
     }
     
     protected virtual void OnTick(UpdateInterval interval) {}

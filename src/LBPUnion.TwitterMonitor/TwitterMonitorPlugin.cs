@@ -104,12 +104,13 @@ public class TwitterMonitorPlugin : BotModule
         return searchOptions;
     }
 
-    public async Task<Tweet[]?> FetchLatestTweets(ulong guildId)
+    public async Task<Tweet[]?> FetchLatestTweets(ulong guildId, bool allowLastTweet = false)
     {
         Logger.Log("Fetching tweets for guildId " + guildId);
 
         Tweet[] results = null;
-
+        var failed = false;
+        
         try
         {
             results = await TwitterClient.GetTweetsFromUserIdAsync(GetTwitterUserId(guildId).ToString(),
@@ -118,11 +119,30 @@ public class TwitterMonitorPlugin : BotModule
         catch (Exception ex)
         {
             Logger.Log($"Couldn't fetch latest tweets for guild guild {guildId}: {ex.Message}", LogLevel.Warning);
+            failed = true;
         }
         finally
         {
             if (results == null)
                 results = Array.Empty<Tweet>();
+        }
+
+        if (results.Length == 0 && allowLastTweet && !failed)
+        {
+            
+            var searchOptions = this.GetSearchOptions(guildId);
+            var lastTweet = searchOptions.SinceId ?? string.Empty;
+
+            searchOptions.SinceId = null;
+
+            if (!string.IsNullOrWhiteSpace(lastTweet))
+            {
+                var tweet = await TwitterClient.GetTweetAsync(lastTweet, searchOptions);
+                if (tweet != null)
+                {
+                    results = new[] { tweet };
+                }
+            }
         }
 
         return results;
